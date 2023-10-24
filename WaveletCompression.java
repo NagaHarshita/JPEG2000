@@ -53,8 +53,8 @@ class WaveletCompression{
 
 		private void yCrCb(int[][] newY){
 			System.out.println(this.ycrcbImage.getWidth() + " " + this.ycrcbImage.getHeight());
-			for(int y = 0; y < newY[0].length; y++){
-				for(int x = 0; x < newY.length; x++){
+			for(int y = 0; y < newY.length; y++){
+				for(int x = 0; x < newY[0].length; x++){
 					byte yByte = (byte) newY[x][y];
 					int ycrcbPixel = ((yByte & 0xFF));
 					this.ycrcbImage.setRGB(x, y, ycrcbPixel);
@@ -194,59 +194,115 @@ class WaveletCompression{
 			currentImage = LL;
 		}
 
-		ImageProcessor dwt1 = new ImageProcessor(transformedImage[0].length, transformedImage.length);
-		dwt1.yCrCb(transformedImage);
-		this.showIms(dwt1.ycrcbImage);
+		// ImageProcessor dwt1 = new ImageProcessor(transformedImage[0].length, transformedImage.length);
+		// dwt1.yCrCb(transformedImage);
+		// this.showIms(dwt1.ycrcbImage);
 	
 		return transformedImage;
 	}
 
 	public int[][] inverseDWT(int[][] transformedImage, int levels) {
-		int width = transformedImage.length;
-		int height = transformedImage[0].length;
+		// int width = transformedImage.length;
+		// int height = transformedImage[0].length;
 	
-		int[][] currentImage = transformedImage;
+		int[][] currentImage;
+
+		for (int level = 1; level <= levels; level++) {
+			// System.out.println(level);
+			int w = (int) Math.pow(2, level);
+			int h = (int) Math.pow(2, level);
+
+
+			currentImage = new int[h][w];
+			for(int i=0;i<h;i++){
+				for(int j=0;j<w;j++){
+					currentImage[i][j] = transformedImage[i][j];
+				}
+			}
+
+			int subWidth = w/2;
+			int subHeight = h/2;
 	
-		for (int level = levels; level >= 1; level--) {
-			int subWidth = width / (int) Math.pow(2, level);
-			int subHeight = height / (int) Math.pow(2, level);
-	
-			int[][] LL = new int[subWidth][subHeight];
-			int[][] LH = new int[subWidth][subHeight];
-			int[][] HL = new int[subWidth][subHeight];
-			int[][] HH = new int[subWidth][subHeight];
-	
+			int[][] LL = new int[subHeight][subWidth];
+			int[][] LH = new int[subHeight][subWidth];
+			int[][] HL = new int[subHeight][subWidth];
+			int[][] HH = new int[subHeight][subWidth];
+
 			// Extract LL, LH, HL, and HH sub-bands from the currentImage
-			for (int i = 0; i < subWidth; i++) {
-				for (int j = 0; j < subHeight; j++) {
+			for (int i = 0; i < subHeight; i++) {
+				for (int j = 0; j < subWidth; j++) {
 					LL[i][j] = currentImage[i][j];
-					LH[i][j] = currentImage[i][j + subHeight];
-					HL[i][j] = currentImage[i + subWidth][j];
+					LH[i][j] = currentImage[i + subHeight][j];
+					HL[i][j] = currentImage[i][j + subWidth];
 					HH[i][j] = currentImage[i + subWidth][j + subHeight];
 				}
 			}
-	
-			// int[][] lowPass = passFilter(LL, true, false);
-			// int[][] highPass = passFilter(LL, false, false);
-	
-			// Combine lowPass and highPass to get the previous level image
+
 			int[][] previousLevelImage = new int[2 * subWidth][2 * subHeight];
-			for (int i = 0; i < subWidth; i+=2) {
-				for (int j = 0; j < subHeight; j++) {
-					previousLevelImage[i][j] = LL[i][j] + LH[i+subWidth][j];
+
+			// rows 
+			for (int i = 0; i < 2 * subHeight; i++) {
+				for (int j = 0; j < subWidth; j++) {
+					if(i%2==0){
+						previousLevelImage[i][j] = LL[i/2][j] + LH[i/2][j];
+					}else{
+						previousLevelImage[i][j] = LL[i/2][j] - LH[i/2][j];
+					}
+				}
+
+				for (int j = subWidth; j < 2 * subWidth; j++) {
+					if(i%2==0){
+						previousLevelImage[i][j] = HL[i/2][j/2] + HH[i/2][j/2];
+					}else{
+						previousLevelImage[i][j] = HL[i/2][j/2] - HH[i/2][j/2];
+					}
 				}
 			}
-	
-			// Update the currentImage for the next level
-			currentImage = previousLevelImage;
+
+			for (int i = 0; i < subHeight; i++) {
+				for (int j = 0; j < subWidth; j++) {
+					LL[i][j] = previousLevelImage[i][j];
+					LH[i][j] = previousLevelImage[i + subHeight][j];
+					HL[i][j] = previousLevelImage[i][j + subWidth];
+					HH[i][j] = previousLevelImage[i + subWidth][j + subHeight];
+				}
+			}
+
+
+			// columns
+			for (int j = 0; j < 2 * subWidth; j++) {
+				for (int i = 0; i < subHeight; i++) {
+					if(i%2==0){
+						previousLevelImage[i][j] = LL[i][j/2] + LH[i][j/2];
+					}else{
+						previousLevelImage[i][j] = LL[i][j/2] - LH[i][j/2];
+					}
+				}
+
+				for (int i = subHeight; i < 2 * subHeight; i++) {
+					if(i%2==0){
+						previousLevelImage[i][j] = HL[i/2][j/2] + HH[i/2][j/2];
+					}else{
+						previousLevelImage[i][j] = HL[i/2][j/2] - HH[i/2][j/2];
+					}
+				}
+			}
+
+			System.out.println(previousLevelImage.length + " " + previousLevelImage[0].length);
+			
+			for(int i=0;i<h;i++){
+				for(int j=0;j<w;j++){
+					transformedImage[i][j] = previousLevelImage[i][j];
+				}
+			}
 		}
 	
 
-		ImageProcessor dwt1 = new ImageProcessor(currentImage[0].length, currentImage.length);
-		dwt1.yCrCb(currentImage);
+		ImageProcessor dwt1 = new ImageProcessor(transformedImage[0].length, transformedImage.length);
+		dwt1.yCrCb(transformedImage);
 		this.showIms(dwt1.ycrcbImage);
 	
-		return currentImage;
+		return transformedImage;
 	}
 	
 
@@ -286,8 +342,10 @@ class WaveletCompression{
 		int level = Integer.parseInt(args[1]);
 
         ImageProcessor rose = new ImageProcessor(args[0], jpeg2000.width, jpeg2000.height);
-		int[][] img = jpeg2000.applyDWT(rose.Y, 2);
+		int[][] img = jpeg2000.applyDWT(rose.Y, 9);
 
-		// jpeg2000.inverseDWT(img, 2);
+		System.out.println("Compression Complete");
+
+		jpeg2000.inverseDWT(img, 9);
     }
 }
