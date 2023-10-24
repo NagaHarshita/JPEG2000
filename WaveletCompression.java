@@ -181,8 +181,8 @@ class WaveletCompression{
 			HH = passFilter(highPass, false, false);
 
 			// Column transformation
-			for (int i = 0; i < subWidth; i++) {
-				for (int j = 0; j < subHeight; j++) {
+			for (int i = 0; i < subHeight; i++) {
+				for (int j = 0; j < subWidth; j++) {
 					transformedImage[i][j] = LL[i][j];
 					transformedImage[i][j + subWidth] = HL[i][j];
 					transformedImage[i  + subHeight][j] = LH[i][j];
@@ -250,58 +250,6 @@ class WaveletCompression{
 	}
 	
 
-	// public int[][] inverseDWT(int[][] dwt){
-	// 	int width = dwt.length;
-	// 	int height = dwt[0].length;
-	// 	int[][] transformedImage = new int[width][height];
-	// 	int[][] currentImage = transformedImage;
-		
-	// 	for(int level=1;level<=9;level++){
-	// 		int w = (int) Math.pow(2, level);
-	// 		int h = w;
-	// 		int[][] img = new int[h][w];
-	// 		int[][] LL = new int[h/2][w/2];
-	// 		int[][] HL = new int[h/2][w/2];
-	// 		int[][] LH = new int[h/2][w/2];
-	// 		int[][] HH = new int[h/2][w/2];
-
-	// 		for(int i=0;i<w/2;i++){
-	// 			for(int j=0;j<h/2;j++){
-	// 				LL[i][j] = dwt[i][j];
-	// 				HL[i][j] = dwt[i+w/2][j];
-	// 				LH[i][j] = dwt[i][j+h/2];
-	// 				HH[i][j] = dwt[i+w/2][j+h/2];
- 	// 			}
-	// 		}
-			
-
-	// 		int[][] lowPass = passFilter(LL, true, false);
-	// 		int[][] highPass = passFilter(LL, false, false);
-
-	// 		int[][] previousLevelImage = new int[w][h];
-	// 		for (int i = 0; i < w/2; i++) {
-	// 			for (int j = 0; j < h/2; j++) {
-	// 				previousLevelImage[i][j] = lowPass[i][j];
-	// 				previousLevelImage[i][j + h/2] = highPass[i][j];
-	// 				previousLevelImage[i + w/2][j] = LH[i][j];
-	// 				previousLevelImage[i + w/2][j + h/2] = HH[i][j];
-	// 			}
-	// 		}
-
-	// 		// Update the currentImage for the next level
-	// 		currentImage = previousLevelImage;
-	// 	}
-	// 		// for(int i=0;i<w/2;i++){
-	// 		// 	for(int j=0;j<h/2;j++){
-	// 		// 		transformedImage[i][j] = LL[i][j] + LH[i][j];
-	// 		// 		transformedImage[i+1][j] = LL[i][j] - LH[i][j];
-	// 		// 	}
-	// 		// }
-
-
-	// 	return transformedImage;
-	// }
-
 
     public void showIms(BufferedImage image){
         frame = new JFrame("Show Image");
@@ -338,7 +286,7 @@ class WaveletCompression{
 		int level = Integer.parseInt(args[1]);
 
         ImageProcessor rose = new ImageProcessor(args[0], jpeg2000.width, jpeg2000.height);
-		int[][] img = jpeg2000.applyDWT(rose.Y, 9);
+		int[][] img = jpeg2000.applyDWT(rose.Y, 2);
 
 		// jpeg2000.inverseDWT(img, 2);
     }
