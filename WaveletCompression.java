@@ -190,15 +190,6 @@ class WaveletCompression{
 					transformedImage[i + subHeight][j + subWidth] = HH[i][j];
 				}
 			}
-
-			// System.out.println("Compression "+level);
-
-			// for(int i=0;i<height;i++){
-			// 	for(int j=0;j<width;j++){
-			// 		System.out.print(transformedImage[i][j]+" ");
-			// 	}
-			// 	System.out.print("\n");
-			// }
 	
 			// Update the currentImage for the next level
 			currentImage = LL;
@@ -212,25 +203,16 @@ class WaveletCompression{
 	}
 
 	public int[][] inverseDWT(int[][] transformedImage, int levels) {
-		int wk = transformedImage.length;
-		int hk = transformedImage[0].length;
+		// int wk = transformedImage.length;
+		// int hk = transformedImage[0].length;
 	
-		int[][] currentImage;
-		int[][] previousLevelImage = new int[hk][wk];
+		int[][] currentImage = transformedImage;
+		int[][] previousLevelImage = new int[height][width];
 
 
 		for (int level = 1; level <= levels; level++) {
-			// System.out.println(level);
 			int w = (int) Math.pow(2, level);
 			int h = (int) Math.pow(2, level);
-
-
-			currentImage = new int[h][w];
-			for(int i=0;i<h;i++){
-				for(int j=0;j<w;j++){
-					currentImage[i][j] = transformedImage[i][j];
-				}
-			}
 
 			int subWidth = w/2;
 			int subHeight = h/2;
@@ -264,21 +246,12 @@ class WaveletCompression{
 
 				for (int j = subWidth; j < 2 * subWidth; j++) {
 					if(i%2==0){
-						previousLevelImage[i][j] = HL[i/2][j/2] + HH[i/2][j/2];
+						previousLevelImage[i][j] = HL[i/2][j-subWidth] + HH[i/2][j - subWidth];
 					}else{
-						previousLevelImage[i][j] = HL[i/2][j/2] - HH[i/2][j/2];
+						previousLevelImage[i][j] = HL[i/2][j-subWidth] - HH[i/2][j- subWidth];
 					}
 				}
 			}
-
-			// System.out.println("DeCompression, Column Stretch - "+level);
-
-			// for(int i=0;i<h;i++){
-			// 	for(int j=0;j<w;j++){
-			// 		System.out.print(previousLevelImage[i][j]+" ");
-			// 	}
-			// 	System.out.print("\n");
-			// }
 
 			for (int i = 0; i < subHeight; i++) {
 				for (int j = 0; j < subWidth; j++) {
@@ -302,35 +275,25 @@ class WaveletCompression{
 
 				for (int i = subHeight; i < 2 * subHeight; i++) {
 					if(j%2==0){
-						previousLevelImage[i][j] = LH[i/2][j/2] + HH[i/2][j/2];
+						previousLevelImage[i][j] = LH[i-subHeight][j/2] + HH[i-subHeight][j/2];
 					}else{
-						previousLevelImage[i][j] = LH[i/2][j/2] - HH[i/2][j/2];
+						previousLevelImage[i][j] = LH[i-subHeight][j/2] - HH[i-subHeight][j/2];
 					}
 				}
 			}
 
-			// System.out.println("DeCompression, Row Stretch - "+level);
-
-			// for(int i=0;i<h;i++){
-			// 	for(int j=0;j<w;j++){
-			// 		System.out.print(previousLevelImage[i][j]+" ");
-			// 	}
-			// 	System.out.print("\n");
-			// }
-
-			
 			for(int i=0;i<h;i++){
 				for(int j=0;j<w;j++){
-					transformedImage[i][j] = previousLevelImage[i][j];
+					currentImage[i][j] = previousLevelImage[i][j];
 				}
 			}
 		}
 
-		ImageProcessor dwt1 = new ImageProcessor(previousLevelImage[0].length, previousLevelImage.length);
-		dwt1.yCrCb(previousLevelImage);
+		ImageProcessor dwt1 = new ImageProcessor(currentImage[0].length, currentImage.length);
+		dwt1.yCrCb(currentImage);
 		this.showIms(dwt1.ycrcbImage);
 	
-		return previousLevelImage;
+		return currentImage;
 	}
 	
 
@@ -369,10 +332,29 @@ class WaveletCompression{
         WaveletCompression jpeg2000 = new WaveletCompression();
 		int level = Integer.parseInt(args[1]);
         ImageProcessor rose = new ImageProcessor(args[0], jpeg2000.width, jpeg2000.height);
-		int[][] k = {{1,2,3,4}, {5,6,7,8}, {9,10,11,12}, {13,14,15,16}};
+
+
+		// int[][] k = {{1,2,3,4,5,6,7,8}, {5,6,7,8,5,6,7,8}, {9,10,11,12,5,6,7,8}, {13,14,15,16,5,6,7,8},{1,2,3,4,5,6,7,8}, {5,6,7,8,5,6,7,8}, {9,10,11,12,5,6,7,8}, {13,14,15,16,5,6,7,8}};
+
 		int[][] img = jpeg2000.applyDWT(rose.Y, 9);
+
 		System.out.println("Compression Complete");
-		int[][] dec = jpeg2000.inverseDWT(img, 6);
+
+		int zeroW = (int)Math.pow(2, level);
+		int zeroH = (int)Math.pow(2, level);
+
+		int[][] dwt = new int[jpeg2000.height][jpeg2000.width];
+		for(int i=0;i<jpeg2000.height;i++){
+			for(int j=0;j<jpeg2000.width;j++){
+				if(i<zeroH && j<zeroW){
+					dwt[i][j] = img[i][j];
+				}else{
+					dwt[i][j] = 0;
+				}
+			}
+		}
+
+		int[][] dec = jpeg2000.inverseDWT(dwt, 9);
 
 		// for(int i=0;i<dec.length;i++){
 		// 	for(int j=0;j<dec[0].length;j++){
