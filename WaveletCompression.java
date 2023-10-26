@@ -191,14 +191,14 @@ class WaveletCompression{
 				}
 			}
 
-			System.out.println("Compression "+level);
+			// System.out.println("Compression "+level);
 
-			for(int i=0;i<height;i++){
-				for(int j=0;j<width;j++){
-					System.out.print(transformedImage[i][j]+" ");
-				}
-				System.out.print("\n");
-			}
+			// for(int i=0;i<height;i++){
+			// 	for(int j=0;j<width;j++){
+			// 		System.out.print(transformedImage[i][j]+" ");
+			// 	}
+			// 	System.out.print("\n");
+			// }
 	
 			// Update the currentImage for the next level
 			currentImage = LL;
@@ -212,10 +212,12 @@ class WaveletCompression{
 	}
 
 	public int[][] inverseDWT(int[][] transformedImage, int levels) {
-		// int width = transformedImage.length;
-		// int height = transformedImage[0].length;
+		int wk = transformedImage.length;
+		int hk = transformedImage[0].length;
 	
 		int[][] currentImage;
+		int[][] previousLevelImage = new int[hk][wk];
+
 
 		for (int level = 1; level <= levels; level++) {
 			// System.out.println(level);
@@ -248,7 +250,7 @@ class WaveletCompression{
 				}
 			}
 
-			int[][] previousLevelImage = new int[2 * subWidth][2 * subHeight];
+			previousLevelImage = new int[2 * subWidth][2 * subHeight];
 
 			// rows 
 			for (int i = 0; i < 2 * subHeight; i++) {
@@ -269,21 +271,21 @@ class WaveletCompression{
 				}
 			}
 
-			System.out.print("DeCompression, Column Stretch"+level);
+			// System.out.println("DeCompression, Column Stretch - "+level);
 
-			for(int i=0;i<height;i++){
-				for(int j=0;j<width;j++){
-					System.out.print(previousLevelImage[i][j]+" ");
-				}
-				System.out.print("\n");
-			}
+			// for(int i=0;i<h;i++){
+			// 	for(int j=0;j<w;j++){
+			// 		System.out.print(previousLevelImage[i][j]+" ");
+			// 	}
+			// 	System.out.print("\n");
+			// }
 
 			for (int i = 0; i < subHeight; i++) {
 				for (int j = 0; j < subWidth; j++) {
 					LL[i][j] = previousLevelImage[i][j];
 					LH[i][j] = previousLevelImage[i + subHeight][j];
 					HL[i][j] = previousLevelImage[i][j + subWidth];
-					HH[i][j] = previousLevelImage[i + subWidth][j + subHeight];
+					HH[i][j] = previousLevelImage[i + subHeight][j + subWidth];
 				}
 			}
 
@@ -291,32 +293,31 @@ class WaveletCompression{
 			// columns
 			for (int j = 0; j < 2 * subWidth; j++) {
 				for (int i = 0; i < subHeight; i++) {
-					if(i%2==0){
-						previousLevelImage[i][j] = LL[i][j/2] + LH[i][j/2];
+					if(j%2==0){
+						previousLevelImage[i][j] = LL[i][j/2] + HL[i][j/2];
 					}else{
-						previousLevelImage[i][j] = LL[i][j/2] - LH[i][j/2];
+						previousLevelImage[i][j] = LL[i][j/2] - HL[i][j/2];
 					}
 				}
 
 				for (int i = subHeight; i < 2 * subHeight; i++) {
-					if(i%2==0){
-						previousLevelImage[i][j] = HL[i/2][j/2] + HH[i/2][j/2];
+					if(j%2==0){
+						previousLevelImage[i][j] = LH[i/2][j/2] + HH[i/2][j/2];
 					}else{
-						previousLevelImage[i][j] = HL[i/2][j/2] - HH[i/2][j/2];
+						previousLevelImage[i][j] = LH[i/2][j/2] - HH[i/2][j/2];
 					}
 				}
 			}
 
-			System.out.print("DeCompression, Row Stretch"+level);
+			// System.out.println("DeCompression, Row Stretch - "+level);
 
-			for(int i=0;i<height;i++){
-				for(int j=0;j<width;j++){
-					System.out.print(previousLevelImage[i][j]+" ");
-				}
-				System.out.print("\n");
-			}
+			// for(int i=0;i<h;i++){
+			// 	for(int j=0;j<w;j++){
+			// 		System.out.print(previousLevelImage[i][j]+" ");
+			// 	}
+			// 	System.out.print("\n");
+			// }
 
-			System.out.println(previousLevelImage.length + " " + previousLevelImage[0].length);
 			
 			for(int i=0;i<h;i++){
 				for(int j=0;j<w;j++){
@@ -324,13 +325,12 @@ class WaveletCompression{
 				}
 			}
 		}
-	
 
-		// ImageProcessor dwt1 = new ImageProcessor(transformedImage[0].length, transformedImage.length);
-		// dwt1.yCrCb(transformedImage);
-		// this.showIms(dwt1.ycrcbImage);
+		ImageProcessor dwt1 = new ImageProcessor(previousLevelImage[0].length, previousLevelImage.length);
+		dwt1.yCrCb(previousLevelImage);
+		this.showIms(dwt1.ycrcbImage);
 	
-		return transformedImage;
+		return previousLevelImage;
 	}
 	
 
@@ -368,17 +368,11 @@ class WaveletCompression{
     public static void main(String[] args) {
         WaveletCompression jpeg2000 = new WaveletCompression();
 		int level = Integer.parseInt(args[1]);
-
         ImageProcessor rose = new ImageProcessor(args[0], jpeg2000.width, jpeg2000.height);
-
 		int[][] k = {{1,2,3,4}, {5,6,7,8}, {9,10,11,12}, {13,14,15,16}};
-
-		int[][] img = jpeg2000.applyDWT(k, 2);
-
+		int[][] img = jpeg2000.applyDWT(rose.Y, 9);
 		System.out.println("Compression Complete");
-
-		
-		// int[][] dec = jpeg2000.inverseDWT(img, 2);
+		int[][] dec = jpeg2000.inverseDWT(img, 6);
 
 		// for(int i=0;i<dec.length;i++){
 		// 	for(int j=0;j<dec[0].length;j++){
