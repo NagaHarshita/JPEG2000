@@ -3,8 +3,7 @@ import java.awt.image.*;
 import java.io.*;
 import javax.swing.*;
 import javax.imageio.ImageIO;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 
 class WaveletCompression{
 
@@ -326,26 +325,32 @@ class WaveletCompression{
 				System.exit(0); // Exit the program
 			}
 		});
+
+		try {
+			Timer timer = new Timer(5000, new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					frame.dispose(); // Close the window after 5 seconds
+				}
+			});
+			timer.setRepeats(false); // Set the timer to run only once
+			timer.start();
+			Thread.sleep(5000);
+
+		}catch (Exception e) {
+           
+            // catching the exception
+            System.out.println(e);
+        }
     }
 
-    public static void main(String[] args) {
-        WaveletCompression jpeg2000 = new WaveletCompression();
-		int level = Integer.parseInt(args[1]);
-        ImageProcessor rose = new ImageProcessor(args[0], jpeg2000.width, jpeg2000.height);
-
-
-		// int[][] k = {{1,2,3,4,5,6,7,8}, {5,6,7,8,5,6,7,8}, {9,10,11,12,5,6,7,8}, {13,14,15,16,5,6,7,8},{1,2,3,4,5,6,7,8}, {5,6,7,8,5,6,7,8}, {9,10,11,12,5,6,7,8}, {13,14,15,16,5,6,7,8}};
-
-		int[][] img = jpeg2000.applyDWT(rose.Y, 9);
-
-		System.out.println("Compression Complete");
-
+	public int[][] zeroCoef(int[][] img, int level){
 		int zeroW = (int)Math.pow(2, level);
 		int zeroH = (int)Math.pow(2, level);
 
-		int[][] dwt = new int[jpeg2000.height][jpeg2000.width];
-		for(int i=0;i<jpeg2000.height;i++){
-			for(int j=0;j<jpeg2000.width;j++){
+		int[][] dwt = new int[height][width];
+		for(int i=0;i<height;i++){
+			for(int j=0;j<width;j++){
 				if(i<zeroH && j<zeroW){
 					dwt[i][j] = img[i][j];
 				}else{
@@ -354,13 +359,29 @@ class WaveletCompression{
 			}
 		}
 
-		int[][] dec = jpeg2000.inverseDWT(dwt, 9);
+		return dwt;
+	}
 
-		// for(int i=0;i<dec.length;i++){
-		// 	for(int j=0;j<dec[0].length;j++){
-		// 		System.out.print(dec[i][j] + " ");
-		// 	}
-		// 	System.out.print("\n");
-		// }
+    public static void main(String[] args) {
+        WaveletCompression jpeg2000 = new WaveletCompression();
+		int level = Integer.parseInt(args[1]);
+        ImageProcessor rose = new ImageProcessor(args[0], jpeg2000.width, jpeg2000.height);
+
+		int[][] img = jpeg2000.applyDWT(rose.Y, 9);
+
+		System.out.println("Compression Complete");
+
+		if(level > 0){
+			int[][] dwt = jpeg2000.zeroCoef(img, level);
+			int[][] dec = jpeg2000.inverseDWT(dwt, 9);
+		}
+
+		if(level == -1){
+			for(int i=1;i<=9;i++){
+				int[][] dwt = jpeg2000.zeroCoef(img, i);
+				int[][] dec = jpeg2000.inverseDWT(dwt, 9);
+			}
+		}
+
     }
 }
