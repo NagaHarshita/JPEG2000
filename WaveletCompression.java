@@ -16,83 +16,37 @@ class WaveletCompression{
 		String path;
 
 		BufferedImage image;
-        BufferedImage ycrcbImage;
-		int[][] Y;
-		int[][] Cr;
-		int[][] Cb;
+		int[][] R;
+		int[][] G;
+		int[][] B;
 	
 		ImageProcessor(String path, int width, int height){
 			String[] paths = path.split("/");
 			this.path = paths[paths.length - 1];
 
-			this.Y = new int[width][height];
-			this.Cr = new int[width][height];
-			this.Cb = new int[width][height];
+			this.R = new int[width][height];
+			this.G = new int[width][height];
+			this.B = new int[width][height];
 
 			this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-            this.ycrcbImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 			this.readImageRGB(width, height, path, this.image);
-            this.readImageYCrCb(this.image);
 		}
 
 		ImageProcessor(int width, int height){
 			this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-			this.ycrcbImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-		}
-	
-		private void saveImg(String filename){
-			try {
-				File outputFile = new File(filename); // Replace with your desired output file path and format
-				ImageIO.write(this.image, "png", outputFile); // Use "png" or other image formats as needed
-				System.out.println("Image saved successfully.");
-			} catch (IOException e) {
-				System.err.println("Error: " + e.getMessage());
-			}
 		}
 
-		private void yCrCb(int[][] newY){
-			System.out.println(this.ycrcbImage.getWidth() + " " + this.ycrcbImage.getHeight());
-			for(int y = 0; y < newY.length; y++){
-				for(int x = 0; x < newY[0].length; x++){
-					byte yByte = (byte) newY[x][y];
-					int ycrcbPixel = ((yByte & 0xFF));
-					this.ycrcbImage.setRGB(x, y, ycrcbPixel);
+		private void setRGB(int[][] newR, int[][] newG, int[][] newB){
+			for(int y = 0; y < newR.length; y++){
+				for(int x = 0; x < newR[0].length; x++){
+					byte rByte = (byte) newR[x][y];
+					byte gByte = (byte) newG[x][y];
+					byte bByte = (byte) newB[x][y];
+					int rgbPixel = ((rByte & 0xFF) << 16) | ((gByte & 0xFF) << 8) | ((bByte & 0xFF));
+					this.image.setRGB(x, y, rgbPixel);
 				}
 			}
 		}
-
-        private void readImageYCrCb(BufferedImage img){
-
-            for(int y = 0; y < 512; y++){
-				for(int x = 0; x < 512; x++){
-                    int rgb = img.getRGB(x, y);
-		
-				    float red = (rgb >> 16) & 0xff;
-				    float green = (rgb >> 8) & 0xff;
-				    float blue = (rgb)&0xff;      
-					int yValue=255, crValue=255, cbValue=255;
-				
-					// yValue = (int)( 0.299 * red + 0.587 * green + 0.114 * blue);
-					// crValue = (int)(-0.16874 * red - 0.33126 * green + 0.50000 * blue) + 128;
-					// cbValue = (int)( 0.50000 * red - 0.41869 * green - 0.08131 * blue) + 128;
-					yValue = (int)red;
-					crValue = (int)green;
-					cbValue = (int)blue;
-					this.Y[x][y] = yValue;
-					this.Cr[x][y] = crValue;
-					this.Cb[x][y] = cbValue;
-
-                    byte yByte = (byte) yValue;
-                    byte crByte = (byte) crValue;
-                    byte cbByte = (byte) cbValue;
-	
-
-                    int ycrcbPixel = ((yByte & 0xFF) << 16) | ((crByte & 0xFF) << 8) | ((cbByte & 0xFF));
-					
-                    this.ycrcbImage.setRGB(x, y, ycrcbPixel);
-                }
-            }
-        }
 
 		private void readImageRGB(int width, int height, String imgPath, BufferedImage img){
 			try{
@@ -109,11 +63,13 @@ class WaveletCompression{
 	
 				for(int y = 0; y < height; y++){
 					for(int x = 0; x < width; x++){
-						byte a = 0;
 						byte r = bytes[ind];
 						byte g = bytes[ind+height*width];
 						byte b = bytes[ind+height*width*2]; 
 						int pix = 0xff000000 | ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff);
+						this.R[x][y] = (int)r;
+						this.G[x][y] = (int)g;
+						this.B[x][y] = (int)b;
 						img.setRGB(x,y,pix);
 						ind++;
 					}
@@ -193,17 +149,10 @@ class WaveletCompression{
 			// Update the currentImage for the next level
 			currentImage = LL;
 		}
-
-		// ImageProcessor dwt1 = new ImageProcessor(transformedImage[0].length, transformedImage.length);
-		// dwt1.yCrCb(transformedImage);
-		// this.showIms(dwt1.ycrcbImage);
-	
 		return transformedImage;
 	}
 
 	public int[][] inverseDWT(int[][] transformedImage, int levels) {
-		// int wk = transformedImage.length;
-		// int hk = transformedImage[0].length;
 	
 		int[][] currentImage = transformedImage;
 		int[][] previousLevelImage = new int[height][width];
@@ -287,15 +236,10 @@ class WaveletCompression{
 				}
 			}
 		}
-
-		ImageProcessor dwt1 = new ImageProcessor(currentImage[0].length, currentImage.length);
-		dwt1.yCrCb(currentImage);
-		this.showIms(dwt1.ycrcbImage);
 	
 		return currentImage;
 	}
 	
-
 
     public void showIms(BufferedImage image){
         frame = new JFrame("Show Image");
@@ -335,10 +279,9 @@ class WaveletCompression{
 			});
 			timer.setRepeats(false); // Set the timer to run only once
 			timer.start();
-			Thread.sleep(5000);
+			Thread.sleep(2000);
 
 		}catch (Exception e) {
-           
             // catching the exception
             System.out.println(e);
         }
@@ -358,8 +301,12 @@ class WaveletCompression{
 				}
 			}
 		}
-
 		return dwt;
+	}
+
+	public int[][] getIDWT(int[][] img, int level){
+		int[][] dwt = this.zeroCoef(img, level);
+		return this.inverseDWT(dwt, 9);
 	}
 
     public static void main(String[] args) {
@@ -367,21 +314,32 @@ class WaveletCompression{
 		int level = Integer.parseInt(args[1]);
         ImageProcessor rose = new ImageProcessor(args[0], jpeg2000.width, jpeg2000.height);
 
-		int[][] img = jpeg2000.applyDWT(rose.Y, 9);
+		int[][] dwtY = jpeg2000.applyDWT(rose.R, 9);
+		int[][] dwtCr = jpeg2000.applyDWT(rose.G, 9);
+		int[][] dwtCb = jpeg2000.applyDWT(rose.B, 9);
 
 		System.out.println("Compression Complete");
 
+		int[][] idwtR, idwtG, idwtB;
+
 		if(level > 0){
-			int[][] dwt = jpeg2000.zeroCoef(img, level);
-			int[][] dec = jpeg2000.inverseDWT(dwt, 9);
+			idwtR = jpeg2000.getIDWT(dwtY, level);
+			idwtG = jpeg2000.getIDWT(dwtCr, level);
+			idwtB = jpeg2000.getIDWT(dwtCb, level);
+			rose.setRGB(idwtR, idwtG, idwtB);
+			jpeg2000.showIms(rose.image);
 		}
 
 		if(level == -1){
 			for(int i=1;i<=9;i++){
-				int[][] dwt = jpeg2000.zeroCoef(img, i);
-				int[][] dec = jpeg2000.inverseDWT(dwt, 9);
+				idwtR = jpeg2000.getIDWT(dwtY, i);
+				idwtG = jpeg2000.getIDWT(dwtCr, i);
+				idwtB = jpeg2000.getIDWT(dwtCb, i);
+				rose.setRGB(idwtR, idwtG, idwtB);
+				jpeg2000.showIms(rose.image);
 			}
 		}
 
+		System.out.println("DeCompression Complete");
     }
 }
