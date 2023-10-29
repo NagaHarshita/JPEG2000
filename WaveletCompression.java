@@ -2,7 +2,6 @@ import java.awt.*;
 import java.awt.image.*;
 import java.io.*;
 import javax.swing.*;
-import javax.imageio.ImageIO;
 import java.awt.event.*;
 
 class WaveletCompression{
@@ -36,13 +35,13 @@ class WaveletCompression{
 			this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 		}
 
-		private void setRGB(int[][] newR, int[][] newG, int[][] newB){
+		private void setImageRGB(int[][] newR, int[][] newG, int[][] newB){
 			for(int y = 0; y < newR.length; y++){
 				for(int x = 0; x < newR[0].length; x++){
 					byte rByte = (byte) newR[x][y];
 					byte gByte = (byte) newG[x][y];
 					byte bByte = (byte) newB[x][y];
-					int rgbPixel = ((rByte & 0xFF) << 16) | ((gByte & 0xFF) << 8) | ((bByte & 0xFF));
+					int rgbPixel = 0xff000000 | ((rByte & 0xff) << 16) | ((gByte & 0xff) << 8) | ((bByte & 0xff));
 					this.image.setRGB(x, y, rgbPixel);
 				}
 			}
@@ -67,10 +66,11 @@ class WaveletCompression{
 						byte g = bytes[ind+height*width];
 						byte b = bytes[ind+height*width*2]; 
 						int pix = 0xff000000 | ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff);
+						img.setRGB(x,y,pix);
+
 						this.R[x][y] = (int)r;
 						this.G[x][y] = (int)g;
 						this.B[x][y] = (int)b;
-						img.setRGB(x,y,pix);
 						ind++;
 					}
 				}
@@ -314,28 +314,28 @@ class WaveletCompression{
 		int level = Integer.parseInt(args[1]);
         ImageProcessor rose = new ImageProcessor(args[0], jpeg2000.width, jpeg2000.height);
 
-		int[][] dwtY = jpeg2000.applyDWT(rose.R, 9);
-		int[][] dwtCr = jpeg2000.applyDWT(rose.G, 9);
-		int[][] dwtCb = jpeg2000.applyDWT(rose.B, 9);
+		int[][] dwtR = jpeg2000.applyDWT(rose.R, 9);
+		int[][] dwtG = jpeg2000.applyDWT(rose.G, 9);
+		int[][] dwtB = jpeg2000.applyDWT(rose.B, 9);
 
 		System.out.println("Compression Complete");
 
 		int[][] idwtR, idwtG, idwtB;
 
 		if(level > 0){
-			idwtR = jpeg2000.getIDWT(dwtY, level);
-			idwtG = jpeg2000.getIDWT(dwtCr, level);
-			idwtB = jpeg2000.getIDWT(dwtCb, level);
-			rose.setRGB(idwtR, idwtG, idwtB);
+			idwtR = jpeg2000.getIDWT(dwtR, level);
+			idwtG = jpeg2000.getIDWT(dwtG, level);
+			idwtB = jpeg2000.getIDWT(dwtB, level);
+			rose.setImageRGB(idwtR, idwtG, idwtB);
 			jpeg2000.showIms(rose.image);
 		}
 
 		if(level == -1){
 			for(int i=1;i<=9;i++){
-				idwtR = jpeg2000.getIDWT(dwtY, i);
-				idwtG = jpeg2000.getIDWT(dwtCr, i);
-				idwtB = jpeg2000.getIDWT(dwtCb, i);
-				rose.setRGB(idwtR, idwtG, idwtB);
+				idwtR = jpeg2000.getIDWT(dwtR, i);
+				idwtG = jpeg2000.getIDWT(dwtG, i);
+				idwtB = jpeg2000.getIDWT(dwtB, i);
+				rose.setImageRGB(idwtR, idwtG, idwtB);
 				jpeg2000.showIms(rose.image);
 			}
 		}
