@@ -273,21 +273,6 @@ class WaveletCompression{
 			}
 		});
 
-		try {
-			Timer timer = new Timer(5000, new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					frame.dispose(); // Close the window after 5 seconds
-				}
-			});
-			timer.setRepeats(false); // Set the timer to run only once
-			timer.start();
-			Thread.sleep(5000);
-
-		}catch (Exception e) {
-            // catching the exception
-            System.out.println(e);
-        }
     }
 
 	public float[][] zeroCoef(float[][] img, int level){
@@ -340,6 +325,24 @@ class WaveletCompression{
 				idwtB = jpeg2000.getIDWT(dwtB, i);
 				rose.setImageRGB(idwtR, idwtG, idwtB);
 				jpeg2000.showIms(rose.image);
+				
+				if(i!=9){
+					try {
+						Timer timer = new Timer(5000, new ActionListener() {
+							@Override
+							public void actionPerformed(ActionEvent e) {
+								jpeg2000.frame.dispose(); // Close the window after 5 seconds
+							}
+						});
+						timer.setRepeats(false); // Set the timer to run only once
+						timer.start();
+						Thread.sleep(5000);
+
+					}catch (Exception e) {
+						// catching the exception
+						System.out.println(e);
+					}
+				}
 			}
 		}
 
