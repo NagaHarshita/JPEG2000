@@ -15,17 +15,17 @@ class WaveletCompression{
 		String path;
 
 		BufferedImage image;
-		int[][] R;
-		int[][] G;
-		int[][] B;
+		float[][] R;
+		float[][] G;
+		float[][] B;
 	
 		ImageProcessor(String path, int width, int height){
 			String[] paths = path.split("/");
 			this.path = paths[paths.length - 1];
 
-			this.R = new int[width][height];
-			this.G = new int[width][height];
-			this.B = new int[width][height];
+			this.R = new float[width][height];
+			this.G = new float[width][height];
+			this.B = new float[width][height];
 
 			this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 			this.readImageRGB(width, height, path, this.image);
@@ -35,7 +35,10 @@ class WaveletCompression{
 			this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 		}
 
-		private void setImageRGB(int[][] newR, int[][] newG, int[][] newB){
+		private void setImageRGB(float[][] newR, float[][] newG, float[][] newB){
+			this.R = newR;
+			this.G = newG;
+			this.B = newB;
 			for(int y = 0; y < newR.length; y++){
 				for(int x = 0; x < newR[0].length; x++){
 					byte rByte = (byte) newR[x][y];
@@ -68,9 +71,9 @@ class WaveletCompression{
 						int pix = 0xff000000 | ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff);
 						img.setRGB(x,y,pix);
 
-						this.R[x][y] = (int)r;
-						this.G[x][y] = (int)g;
-						this.B[x][y] = (int)b;
+						this.R[x][y] = (float)r;
+						this.G[x][y] = (float)g;
+						this.B[x][y] = (float)b;
 						ind++;
 					}
 				}
@@ -88,7 +91,7 @@ class WaveletCompression{
 		}
 	}
 
-	public int[][] passFilter(int[][] values, boolean isLowpass, boolean forRow){
+	public float[][] passFilter(float[][] values, boolean isLowpass, boolean forRow){
 		int w, h;
 		h = values.length;
 		w = values[0].length;
@@ -99,7 +102,7 @@ class WaveletCompression{
 			h=h/2;
 		}
 
-		int[][] result = new int[h][w];
+		float[][] result = new float[h][w];
 		int filter = isLowpass ? 1 : -1;
 
 		for(int i=0;i<h;i++){
@@ -114,22 +117,22 @@ class WaveletCompression{
 		return result;
 	}
 
-	public int[][] applyDWT(int[][] image, int levels) {
+	public float[][] applyDWT(float[][] image, int levels) {
 		int height = image.length;
 		int width = image[0].length;
-		int[][] transformedImage = new int[height][width];
+		float[][] transformedImage = new float[height][width];
 	
-		int[][] currentImage = image;
+		float[][] currentImage = image;
 	
 		for (int level = 1; level <= levels; level++) {
 	
 			int subWidth = width / (int) Math.pow(2, level); // w/2
 			int subHeight = height / (int) Math.pow(2, level); // h/2
 
-			int[][] lowPass = passFilter(currentImage, true, true); 
-			int[][] highPass = passFilter(currentImage, false, true); 
+			float[][] lowPass = passFilter(currentImage, true, true); 
+			float[][] highPass = passFilter(currentImage, false, true); 
 	
-			int[][] LL, LH, HL, HH;
+			float[][] LL, LH, HL, HH;
 
 			LL = passFilter(lowPass, true, false);
 			LH = passFilter(lowPass, false, false);
@@ -152,10 +155,10 @@ class WaveletCompression{
 		return transformedImage;
 	}
 
-	public int[][] inverseDWT(int[][] transformedImage, int levels) {
+	public float[][] inverseDWT(float[][] transformedImage, int levels) {
 	
-		int[][] currentImage = transformedImage;
-		int[][] previousLevelImage = new int[height][width];
+		float[][] currentImage = transformedImage;
+		float[][] previousLevelImage = new float[height][width];
 
 
 		for (int level = 1; level <= levels; level++) {
@@ -165,10 +168,10 @@ class WaveletCompression{
 			int subWidth = w/2;
 			int subHeight = h/2;
 	
-			int[][] LL = new int[subHeight][subWidth];
-			int[][] LH = new int[subHeight][subWidth];
-			int[][] HL = new int[subHeight][subWidth];
-			int[][] HH = new int[subHeight][subWidth];
+			float[][] LL = new float[subHeight][subWidth];
+			float[][] LH = new float[subHeight][subWidth];
+			float[][] HL = new float[subHeight][subWidth];
+			float[][] HH = new float[subHeight][subWidth];
 
 			// Extract LL, LH, HL, and HH sub-bands from the currentImage
 			for (int i = 0; i < subHeight; i++) {
@@ -180,7 +183,7 @@ class WaveletCompression{
 				}
 			}
 
-			previousLevelImage = new int[2 * subWidth][2 * subHeight];
+			previousLevelImage = new float[2 * subWidth][2 * subHeight];
 
 			// rows 
 			for (int i = 0; i < 2 * subHeight; i++) {
@@ -279,7 +282,7 @@ class WaveletCompression{
 			});
 			timer.setRepeats(false); // Set the timer to run only once
 			timer.start();
-			Thread.sleep(2000);
+			Thread.sleep(5000);
 
 		}catch (Exception e) {
             // catching the exception
@@ -287,11 +290,11 @@ class WaveletCompression{
         }
     }
 
-	public int[][] zeroCoef(int[][] img, int level){
+	public float[][] zeroCoef(float[][] img, int level){
 		int zeroW = (int)Math.pow(2, level);
 		int zeroH = (int)Math.pow(2, level);
 
-		int[][] dwt = new int[height][width];
+		float[][] dwt = new float[height][width];
 		for(int i=0;i<height;i++){
 			for(int j=0;j<width;j++){
 				if(i<zeroH && j<zeroW){
@@ -304,8 +307,8 @@ class WaveletCompression{
 		return dwt;
 	}
 
-	public int[][] getIDWT(int[][] img, int level){
-		int[][] dwt = this.zeroCoef(img, level);
+	public float[][] getIDWT(float[][] img, int level){
+		float[][] dwt = this.zeroCoef(img, level);
 		return this.inverseDWT(dwt, 9);
 	}
 
@@ -314,18 +317,34 @@ class WaveletCompression{
 		int level = Integer.parseInt(args[1]);
         ImageProcessor rose = new ImageProcessor(args[0], jpeg2000.width, jpeg2000.height);
 
-		int[][] dwtR = jpeg2000.applyDWT(rose.R, 9);
-		int[][] dwtG = jpeg2000.applyDWT(rose.G, 9);
-		int[][] dwtB = jpeg2000.applyDWT(rose.B, 9);
+		float[][] dwtR = jpeg2000.applyDWT(rose.R, 9);
+		float[][] dwtG = jpeg2000.applyDWT(rose.G, 10);
+		float[][] dwtB = jpeg2000.applyDWT(rose.B, 10);
 
 		System.out.println("Compression Complete");
 
-		int[][] idwtR, idwtG, idwtB;
+		float[][] idwtR, idwtG, idwtB;
 
 		if(level > 0){
 			idwtR = jpeg2000.getIDWT(dwtR, level);
 			idwtG = jpeg2000.getIDWT(dwtG, level);
 			idwtB = jpeg2000.getIDWT(dwtB, level);
+			// for(int i=0;i<10;i++){
+			// 	for(int j=0;j<10;j++){
+			// 		System.out.print(idwtR[i][j] + " ");
+			// 	}
+			// 	System.out.println();
+			// }
+
+			// System.out.println();
+
+			// for(int i=0;i<10;i++){
+			// 	for(int j=0;j<10;j++){
+			// 		System.out.print(rose.R[i][j] + " ");
+			// 	}
+			// 	System.out.println();
+			// }
+
 			rose.setImageRGB(idwtR, idwtG, idwtB);
 			jpeg2000.showIms(rose.image);
 		}
@@ -341,5 +360,30 @@ class WaveletCompression{
 		}
 
 		System.out.println("DeCompression Complete");
+
+
+		// int[][] matrix = new int[512][512];
+
+		// int evenValue = 1;
+
+		// for (int i = 0; i < 512; i++) {
+		// 	for (int j = 0; j < 512; j++) {
+		// 		matrix[i][j] = evenValue;
+		// 		evenValue += 2;
+		// 	}
+		// }
+
+		// int[][] dwt = jpeg2000.applyDWT(matrix, 9);
+		
+		// int[][] idwt = jpeg2000.getIDWT(dwt, 9);
+
+		// for(int i=0;i<16;i++){
+		// 	for(int j=0;j<16;j++){
+		// 		if(idwt[i][j]==matrix[i][j]){
+		// 			System.out.print(idwt[i][j] + " ");
+		// 		}
+		// 	}
+		// 	System.out.println();
+		// }
     }
 }
