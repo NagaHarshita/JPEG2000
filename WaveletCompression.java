@@ -328,7 +328,7 @@ class WaveletCompression{
 				
 				if(i!=9){
 					try {
-						Timer timer = new Timer(5000, new ActionListener() {
+						Timer timer = new Timer(2000, new ActionListener() {
 							@Override
 							public void actionPerformed(ActionEvent e) {
 								jpeg2000.frame.dispose(); // Close the window after 5 seconds
@@ -336,7 +336,7 @@ class WaveletCompression{
 						});
 						timer.setRepeats(false); // Set the timer to run only once
 						timer.start();
-						Thread.sleep(5000);
+						Thread.sleep(2000);
 
 					}catch (Exception e) {
 						// catching the exception
